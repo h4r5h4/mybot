@@ -27,12 +27,18 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"strconv"
 )
+
+type Fo struct {
+  USD  float64
+}
 
 func main() {
 	if len(os.Args) != 2 {
@@ -43,6 +49,7 @@ func main() {
 	// start a websocket-based Real Time API session
 	ws, id := slackConnect(os.Args[1])
 	fmt.Println("mybot ready, ^C exits")
+	fmt.Sprintf(id)
 
 	for {
 		// read each incoming message
@@ -52,30 +59,31 @@ func main() {
 		}
 
 		// see if we're mentioned
-		if m.Type == "message" && strings.HasPrefix(m.Text, "<@"+id+">") {
+		if m.Type == "message" {
+			//postMessage(ws,m)
 			// if so try to parse if
 			parts := strings.Fields(m.Text)
-			if len(parts) == 3 && parts[1] == "stock" {
-				// looks good, get the quote and reply with the result
+			if len(parts) == 2 && strings.ToLower(parts[0]) == "s" {
 				go func(m Message) {
-					m.Text = getQuote(parts[2])
+					m.Text = getQuote(parts[1])
 					postMessage(ws, m)
 				}(m)
-				// NOTE: the Message object is copied, this is intentional
-			} else {
-				// huh?
-				m.Text = fmt.Sprintf("sorry, that does not compute\n")
-				postMessage(ws, m)
+			} else if len(parts) == 2 && strings.ToLower(parts[0]) == "c" {
+				go func(m Message) {
+					m.Text = getCrypto(parts[1])
+					postMessage(ws, m)
+				}(m)
 			}
 		}
 	}
 }
 
-// Get the quote via Yahoo. You should replace this method to something
-// relevant to your team!
 func getQuote(sym string) string {
 	sym = strings.ToUpper(sym)
-	url := fmt.Sprintf("http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=nsl1op&e=.csv", sym)
+
+	emo := fmt.Sprintf("")
+	url := fmt.Sprintf("http://download.finance.yahoo.com/d/quotes.csv?s=%s&f=nsl1p2c1op&e=.csv", sym)
+	concat := fmt.Sprintf(" ")
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Sprintf("error: %v", err)
@@ -84,8 +92,47 @@ func getQuote(sym string) string {
 	if err != nil {
 		return fmt.Sprintf("error: %v", err)
 	}
-	if len(rows) >= 1 && len(rows[0]) == 5 {
-		return fmt.Sprintf("%s (%s) is trading at $%s", rows[0][0], rows[0][1], rows[0][2])
+	for i := 0; i < len(rows) ; i++ {
+		if len(rows) >= 1 && len(rows[i]) == 7 {
+
+			test := rows[i][3]
+			if test[0:1] == "+" {
+				emo = ":grin:"
+			} else {
+				emo = ":pensive:"
+			}
+
+		pr, err := strconv.ParseFloat(rows[i][2], 64)
+		if err != nil {
+			return fmt.Sprintf(":wutface:")
+		}
+
+		concat += fmt.Sprintf("*%s (%s) is trading at $%s, Change: %vperc(%s$)* %v\n", rows[i][0], rows[i][1], rows[i][2], test[0:4], rows[i][4], emo)
+		}
 	}
-	return fmt.Sprintf("unknown response format (symbol was \"%s\")", sym)
+
+	return fmt.Sprintf(concat)
+}
+
+func getCrypto(f string) string {
+	f = strings.ToUpper(f)
+	client := &http.Client{}
+	req, err := http.NewRequest( "GET", fmt.Sprintf("https://min-api.cryptocompare.com/data/price?fsym=%s&tsyms=USD", f), nil)
+	if err != nil {
+	  log.Fatalln(err)
+	}
+	req.Header.Add("Accept", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+	  return fmt.Sprintf(":wutface:")
+	}
+	defer resp.Body.Close()
+	decoder := json.NewDecoder(resp.Body)
+	v := Fo{}
+	err = decoder.Decode(&v)
+	if err != nil {
+	  return fmt.Sprintf(":wutface:")
+	}
+
+	return fmt.Sprintf("*%s is trading at $%.5f*", f, v.USD)
 }
