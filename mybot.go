@@ -102,11 +102,6 @@ func getQuote(sym string) string {
 				emo = ":pensive:"
 			}
 
-		pr, err := strconv.ParseFloat(rows[i][2], 64)
-		if err != nil {
-			return fmt.Sprintf(":wutface:")
-		}
-
 		concat += fmt.Sprintf("*%s (%s) is trading at $%s, Change: %vperc(%s$)* %v\n", rows[i][0], rows[i][1], rows[i][2], test[0:4], rows[i][4], emo)
 		}
 	}
