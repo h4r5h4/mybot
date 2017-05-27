@@ -112,6 +112,7 @@ func getCrypto(f string) string {
 	f = strings.ToUpper(f)
 	concat := fmt.Sprintf(" ")
 	cryptArray := strings.Split(f, ",")
+	return fmt.Sprintf(cryptArray)
 	for i := 0; i < len(cryptArray) ; i++ {
 		client := &http.Client{}
 		req, err := http.NewRequest( "GET", fmt.Sprintf("https://min-api.cryptocompare.com/data/price?fsym=%s&tsyms=USD", f), nil)
