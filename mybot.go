@@ -68,13 +68,10 @@ func main() {
 					postMessage(ws, m)
 				}(m)
 			} else if len(parts) == 2 && strings.ToLower(parts[0]) == "c" {
-				cryptArray := strings.Split(parts[1], ",")
-				for i := 0; i < len(cryptArray) ; i++ {
-					go func(m Message) {
-						m.Text = getCrypto(cryptArray[i])
-						postMessage(ws, m)
-					}(m)
-				}
+				go func(m Message) {
+					m.Text = getCrypto(parts[1])
+					postMessage(ws, m)
+				}(m)
 			}
 		}
 	}
@@ -113,23 +110,28 @@ func getQuote(sym string) string {
 
 func getCrypto(f string) string {
 	f = strings.ToUpper(f)
-	client := &http.Client{}
-	req, err := http.NewRequest( "GET", fmt.Sprintf("https://min-api.cryptocompare.com/data/price?fsym=%s&tsyms=USD", f), nil)
-	if err != nil {
-	  log.Fatalln(err)
-	}
-	req.Header.Add("Accept", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-	  return fmt.Sprintf(":wutface:")
-	}
-	defer resp.Body.Close()
-	decoder := json.NewDecoder(resp.Body)
-	v := Fo{}
-	err = decoder.Decode(&v)
-	if err != nil {
-	  return fmt.Sprintf(":wutface:")
+	concat := fmt.Sprintf(" ")
+	cryptArray := strings.Split(parts[1], ",")
+	for i := 0; i < len(cryptArray) ; i++ {
+		client := &http.Client{}
+		req, err := http.NewRequest( "GET", fmt.Sprintf("https://min-api.cryptocompare.com/data/price?fsym=%s&tsyms=USD", f), nil)
+		if err != nil {
+		  log.Fatalln(err)
+		}
+		req.Header.Add("Accept", "application/json")
+		resp, err := client.Do(req)
+		if err != nil {
+		  return fmt.Sprintf(":wutface:")
+		}
+		defer resp.Body.Close()
+		decoder := json.NewDecoder(resp.Body)
+		v := Fo{}
+		err = decoder.Decode(&v)
+		if err != nil {
+		  return fmt.Sprintf(":wutface:")
+		}
+		concat += fmt.Sprintf("*%s is trading at $%.5f*", f, v.USD)
 	}
 
-	return fmt.Sprintf("*%s is trading at $%.5f*", f, v.USD)
+	return fmt.Sprintf(concat)
 }
