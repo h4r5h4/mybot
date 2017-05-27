@@ -68,7 +68,7 @@ func main() {
 					postMessage(ws, m)
 				}(m)
 			} else if len(parts) == 2 && strings.ToLower(parts[0]) == "c" {
-				cryptArray = strings.Split(parts[1], ',')
+				cryptArray = strings.Split(parts[1], ",")
 				for i := 0; i < len(cryptArray) ; i++ {
 					go func(m Message) {
 						m.Text = getCrypto(cryptArray[i])
