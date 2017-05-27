@@ -111,7 +111,7 @@ func getQuote(sym string) string {
 func getCrypto(f string) string {
 	f = strings.ToUpper(f)
 	concat := fmt.Sprintf(" ")
-	cryptArray := strings.Split(parts[1], ",")
+	cryptArray := strings.Split(f, ",")
 	for i := 0; i < len(cryptArray) ; i++ {
 		client := &http.Client{}
 		req, err := http.NewRequest( "GET", fmt.Sprintf("https://min-api.cryptocompare.com/data/price?fsym=%s&tsyms=USD", f), nil)
