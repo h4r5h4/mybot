@@ -37,6 +37,8 @@ import (
 
 type Fo struct {
   USD  float64
+  ETH  float64
+  BTC  float64
 }
 
 func main() {
@@ -111,7 +113,7 @@ func getQuote(sym string) string {
 func getCrypto(f string) string {
 	f = strings.ToUpper(f)
 	client := &http.Client{}
-	req, err := http.NewRequest( "GET", fmt.Sprintf("https://min-api.cryptocompare.com/data/price?fsym=%s&tsyms=USD", f), nil)
+	req, err := http.NewRequest( "GET", fmt.Sprintf("https://min-api.cryptocompare.com/data/price?fsym=%s&tsyms=USD,ETH,BTC", f), nil)
 	if err != nil {
 	  log.Fatalln(err)
 	}
@@ -128,5 +130,5 @@ func getCrypto(f string) string {
 	  return fmt.Sprintf(":wutface:")
 	}
 
-	return fmt.Sprintf("*%s is trading at $%.5f*", f, v.USD)
+	return fmt.Sprintf("*%s is trading at $%.5f, Ξ%.5f, ฿%.5f *", f, v.USD, v.ETH, v.BTC)
 }
